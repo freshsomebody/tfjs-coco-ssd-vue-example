@@ -1,6 +1,9 @@
 # tfjs-coco-ssd-vue-example
 A tensorflow.js coco-ssd example made with Vue.js. Ready your webcam and have fun.
 
+## Live demo (on CodeSandBox)
+[https://4zrnz12744.codesandbox.io/](https://4zrnz12744.codesandbox.io/)
+
 ## Demo screenshot
 ![demo-image1](demo-images/image1.png)
 
@@ -19,7 +22,7 @@ npm run serve
 npm run build
 ```
 
-## App url (in dev server)
+### App url (in local dev server)
 [http://localhost:8080/](http://localhost:8080/)
 
 ## References
