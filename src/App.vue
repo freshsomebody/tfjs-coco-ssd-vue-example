@@ -5,8 +5,8 @@
   <h3 v-if="initFailMessage">Failed to init stream and/or model - {{ initFailMessage }}</h3>
 
   <div class="resultFrame">
-    <video ref="video" width="600" height="400" autoplay></video>
-    <canvas ref="canvas" width="600" height="400"></canvas>
+    <video ref="video" autoplay></video>
+    <canvas ref="canvas" :width="resultWidth" :height="resultHeight"></canvas>
   </div>
 
   <select v-model="baseModel" @change="loadModelAndStartDetecting">
@@ -40,7 +40,11 @@ export default {
       // tfjs model related
       model: null,
       baseModel: 'lite_mobilenet_v2',
-      selectableModels: ['lite_mobilenet_v2', 'mobilenet_v1', 'mobilenet_v2']
+      selectableModels: ['lite_mobilenet_v2', 'mobilenet_v1', 'mobilenet_v2'],
+
+      videoRatio: 1,
+      resultWidth: 0,
+      resultHeight: 0
     }
   },
 
@@ -50,7 +54,7 @@ export default {
       if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
         return navigator.mediaDevices.getUserMedia({
           audio: false, // don't capture audio
-          video: true
+          video: { facingMode: 'environment' } // use the rear camera if there is
         })
           .then(stream => {
             // set <video> source as the webcam input
@@ -61,8 +65,31 @@ export default {
               // support older browsers
               video.src = URL.createObjectURL(stream)
             }
-            this.isVideoStreamReady = true
-            console.log('webcam stream initialized')
+
+            /*
+              model.detect uses tf.fromPixels to create tensors.
+              tf.fromPixels api will get the <video> size from the width and height attributes,
+                which means <video> width and height attributes needs to be set before called model.detect
+
+              To make the <video> responsive, I get the initial video ratio when it's loaded (onloadedmetadata)
+              Then addEventListener on resize, which will adjust the size but remain the ratio
+              At last, resolve the Promise.
+            */
+            return new Promise((resolve, reject) => {
+              // when video is loaded
+              video.onloadedmetadata = () => {
+                // calculate the video ratio
+                this.videoRatio = video.offsetHeight / video.offsetWidth
+                // add event listener on resize to reset the <video> and <canvas> sizes
+                window.addEventListener('resize', this.setResultSize)
+                // set the initial size
+                this.setResultSize()
+
+                this.isVideoStreamReady = true
+                console.log('webcam stream initialized')
+                resolve()
+              }
+            })
           })
           .catch(error => {
             console.log('failed to initialize webcam stream', error)
@@ -71,6 +98,26 @@ export default {
       } else {
         return Promise.reject(new Error('Your browser does not support mediaDevices.getUserMedia API'))
       }
+    },
+
+    setResultSize () {
+      // get the current browser window size
+      let clientWidth = document.documentElement.clientWidth
+
+      // set max width as 600
+      this.resultWidth = Math.min(600, clientWidth)
+      // set the height according to the video ratio
+      this.resultHeight = this.resultWidth * this.videoRatio
+
+      // set <video> width and height
+      /*
+        Doesn't use vue binding :width and :height,
+          because the initial value of resultWidth and resultHeight
+          will affect the ratio got from the initWebcamStream()
+      */
+      let video = this.$refs.video
+      video.width = this.resultWidth
+      video.height = this.resultHeight
     },
 
     loadModel () {
@@ -144,13 +191,18 @@ export default {
 </script>
 
 <style lang="scss">
-.resultFrame {
-  position: relative;
+body {
+  margin: 0;
+}
 
+.resultFrame {
+  display: grid;
+
+  video {
+    grid-area: 1 / 1 / 2 / 2;
+  }
   canvas {
-    position: absolute;
-    top: 0;
-    left: 0
+    grid-area: 1 / 1 / 2 / 2;
   }
 }
 </style>
