@@ -9,7 +9,7 @@
     <canvas ref="canvas" :width="resultWidth" :height="resultHeight"></canvas>
   </div>
 
-  <select v-model="baseModel" @change="loadModelAndStartDetecting">
+  <select v-model="modelConfig.base" @change="loadModelAndStartDetecting">
     <option
       v-for="modelName in selectableModels"
       :key="modelName"
@@ -21,6 +21,8 @@
 </template>
 
 <script>
+import '@tensorflow/tfjs-backend-cpu'
+import '@tensorflow/tfjs-backend-webgl'
 import * as cocoSsd from '@tensorflow-models/coco-ssd'
 
 export default {
@@ -28,7 +30,7 @@ export default {
 
   data () {
     return {
-      // store the promises of initialization
+      // store the promises of initializations
       streamPromise: null,
       modelPromise: null,
 
@@ -39,7 +41,9 @@ export default {
 
       // tfjs model related
       model: null,
-      baseModel: 'lite_mobilenet_v2',
+      modelConfig: {
+        base: 'lite_mobilenet_v2'
+      },
       selectableModels: ['lite_mobilenet_v2', 'mobilenet_v1', 'mobilenet_v2'],
 
       videoRatio: 1,
@@ -58,7 +62,7 @@ export default {
         })
           .then(stream => {
             // set <video> source as the webcam input
-            let video = this.$refs.video
+            const video = this.$refs.video
             try {
               video.srcObject = stream
             } catch (error) {
@@ -102,7 +106,7 @@ export default {
 
     setResultSize () {
       // get the current browser window size
-      let clientWidth = document.documentElement.clientWidth
+      const clientWidth = document.documentElement.clientWidth
 
       // set max width as 600
       this.resultWidth = Math.min(600, clientWidth)
@@ -115,7 +119,7 @@ export default {
           because the initial value of resultWidth and resultHeight
           will affect the ratio got from the initWebcamStream()
       */
-      let video = this.$refs.video
+      const video = this.$refs.video
       video.width = this.resultWidth
       video.height = this.resultHeight
     },
@@ -125,7 +129,7 @@ export default {
       // if model already exists => dispose it and load a new one
       if (this.model) this.model.dispose()
       // load model with the baseModel
-      return cocoSsd.load(this.baseModel)
+      return cocoSsd.load(this.modelConfig)
         .then(model => {
           this.model = model
           this.isModelReady = true
@@ -140,7 +144,7 @@ export default {
     async detectObjects () {
       if (!this.isModelReady) return
 
-      let predictions = await this.model.detect(this.$refs.video)
+      const predictions = await this.model.detect(this.$refs.video)
       this.renderPredictions(predictions)
       requestAnimationFrame(() => {
         this.detectObjects()
@@ -178,7 +182,7 @@ export default {
         ctx.fillText(
           `${(prediction.score * 100).toFixed(1)}% ${prediction.class}`,
           prediction.bbox[0],
-          prediction.bbox[1] > 10 ? prediction.bbox[1] - 5 : 10)
+          prediction.bbox[1] + 20)
       })
     }
   },
