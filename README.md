@@ -2,7 +2,7 @@
 A tensorflow.js coco-ssd example made with Vue.js. Ready your webcam and have fun.
 
 ## Live demo (on CodeSandBox)
-[https://4zrnz12744.codesandbox.io/](https://4zrnz12744.codesandbox.io/)
+<a href="https://sdio8.csb.app/" target="_blank">https://sdio8.csb.app/</a>
 
 ## Demo screenshot
 ![demo-image1](demo-images/image1.png)
